@@ -26,8 +26,8 @@ task_do_free (struct task *task)
 static void
 task_free (struct task *task)
 {
-	if (task->id != -1)
-		table[task->id] = NULL;
+	if (task->tid != -1)
+		table[task->tid] = NULL;
 	task->next = free_list;
 	free_list = task;
 }
@@ -61,12 +61,12 @@ task_new (
 		task = new (struct task);
 	}
 
-	task->id = find_free_id ();
-	if (task->id == -1) {
+	task->tid = find_free_id ();
+	if (task->tid == -1) {
 		task_free (task);
 		return NULL;
 	}
-	table[task->id] = task;
+	table[task->tid] = task;
 	
 	task->next = NULL;
 	task->prev = NULL;
@@ -99,7 +99,7 @@ int
 task_id (void)
 {
 	assert (current != NULL);
-	return current->id;
+	return current->tid;
 }
 
 static struct task *
@@ -170,7 +170,7 @@ task_spawn (const char *name, void(*entry)(void *), void *arg)
 
 	link_task (task);
 
-	return task->id;
+	return task->tid;
 }
 
 void

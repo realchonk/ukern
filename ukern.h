@@ -9,7 +9,7 @@ struct cpu_context;
 struct task {
 	struct task *next, *prev;
 	struct cpu_context *ctx;
-	int id;				/* task id */
+	int tid;			/* task id */
 
 	char *name;			/* task name (optional) */
 	void *stack;
