@@ -48,6 +48,9 @@ void task_yield (void);
 /* wait for a child task to exit */
 int task_wait (int *wid);
 
+/* kill a task */
+int task_kill (int tid);
+
 /* MISC */
 
 /* block signals */

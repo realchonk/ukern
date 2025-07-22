@@ -1,6 +1,5 @@
 #include <sys/time.h>
 #include <stdbool.h>
-#include <assert.h>
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -48,7 +47,7 @@ xitoa (char *buf, int x, int base)
 	size_t i = 0, j;
 	char tmp;
 
-	assert (base >= 2 && base <= 16);
+	//assert (base >= 2 && base <= 16);
 
 	if (x == 0)
 		return "0";
@@ -102,6 +101,7 @@ xpanic (const char *fn, const char *msg)
 
 #define panic(msg) (xpanic (__func__, (msg)))
 #define assert_blocked() (is_blocked () ? 0 : (panic ("signals must be blocked")))
+#define assert(cond) ((cond) ? 0 : (panic ("assertion failed: " #cond), 0))
 
 static void
 task_do_free (struct task *task)
@@ -264,6 +264,43 @@ task_wakeup (int tid)
 	}
 }
 
+static void
+task_die (struct task *task, int ec)
+{
+	assert_blocked ();
+
+	if (task->ptid == 0) {
+		task_free (task);
+		return;
+	}
+
+	switch (task->state) {
+	case TRUN:
+		if (task->next != NULL)
+			task->next->prev = task->prev;
+		if (task->prev != NULL)
+			task->prev->next = task->next;
+		if (head == task)
+			head = task->next;
+		if (current == task)
+			current = head;
+		break;
+	case TWAIT:
+		break;
+	case TDEAD:
+		break;
+	}
+
+	task->state = TDEAD;
+	task->data = ec;
+	task->next = zombies;
+	task->prev = NULL;
+	if (task->next != NULL)
+		task->next->prev = task;
+	zombies = task;
+	task_wakeup (task->ptid);
+}
+
 void
 task_exit (int ec)
 {
@@ -281,19 +318,8 @@ task_exit (int ec)
 	}
 
 	task = unlink_self ();
-	task->data = ec;
-	if (task->ptid == 0) {
-		task_free (task);
-	} else {
-		/* add self to the list of zombies */
-		task->state = TDEAD;
-		task->prev = NULL;
-		task->next = zombies;
-		if (task->next)
-			task->next->prev = task;
-		zombies = task;
-		task_wakeup (task->ptid);
-	}
+	task->state = TDEAD;
+	task_die (task, ec);
 
 	if (current == NULL) {
 		current = head;
@@ -305,6 +331,23 @@ task_exit (int ec)
 	unblock ();
 
 	ctx_enter (current->ctx);
+}
+
+int
+task_kill (int tid)
+{
+	struct task *task;
+
+	block ();
+
+	task = table[tid];
+	if (task == NULL)
+		return -1;
+
+	task_die (task, 169);
+
+	unblock ();
+	return 0;
 }
 
 static void
@@ -335,9 +378,9 @@ task_wait (int *wid)
 			if (task->ptid == current->tid) {
 				tid = task->tid;
 
-				if (task->prev)
+				if (task->prev != NULL)
 					task->prev->next = task->next;
-				if (task->next)
+				if (task->next != NULL)
 					task->next->prev = task->prev;
 				if (task == zombies)
 					zombies = task->next;

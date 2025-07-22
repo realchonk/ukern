@@ -15,6 +15,7 @@ void loop_task (void *arg)
 
 void other_task (void *arg)
 {
+	(void)arg;
 	puts ("HELLO WORLD");
 	task_exit (42);
 }
@@ -22,16 +23,27 @@ void other_task (void *arg)
 void main_task (void *arg)
 {
 	(void)arg;
-	int tid, wst;
+	int i, tid, wst;
 
 	task_spawn ("other", other_task, NULL);
 	task_spawn ("Task A", loop_task, "A");
 	task_spawn ("Task B", loop_task, "B");
 	task_spawn ("Task C", loop_task, "C");
+	task_spawn ("Task D", loop_task, "D");
+	task_spawn ("Task E", loop_task, "E");
+	tid = task_spawn ("Task D", loop_task, "F");
 
-	puts ("waiting...");
-	tid = task_wait (&wst);
-	printf ("%d exited with %d.\n", tid, wst);
+	task_yield ();
+	printf ("killing %d...\n", tid);
+	task_kill (tid);
+
+	for (i = 0; i < 2; ++i) {
+		puts ("waiting...");
+		tid = task_wait (&wst);
+		printf ("%d exited with %d.\n", tid, wst);
+	}
+
+	puts ("exiting...");
 
 	task_exit (0);
 }
