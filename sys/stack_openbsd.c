@@ -1,8 +1,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#ifdef __OpenBSD__
-void *alloc_stack (size_t size)
+void *stack_alloc (size_t size)
 {
 	void *ptr = mmap (
 		NULL,
@@ -15,11 +14,8 @@ void *alloc_stack (size_t size)
 
 	return ptr != MAP_FAILED ? ptr : NULL;
 }
-void free_stack (void *stack, size_t size)
+void stack_free (void *stack, size_t size)
 {
 	munmap (stack, size);
 }
-#else
-# error Unsupported Operating System
-#endif
 

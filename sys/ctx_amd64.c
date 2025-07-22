@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdint.h>
-#include "ukern.h"
+#include "task.h"
 
 /* CPU context */
 struct cpu_context {
@@ -61,7 +61,7 @@ ctx_enter (struct cpu_context *ctx)
 		"pop %r13\n"
 		"pop %r14\n"
 		"pop %r15\n"
-		"call unblock\n"
+		"call sys_unblock\n"
 		"ret"
 	);
 }
@@ -92,7 +92,7 @@ ctx_switch (struct cpu_context **old, struct cpu_context *ctx)
 		"pop %r13\n"
 		"pop %r14\n"
 		"pop %r15\n"
-		"call unblock\n"
+		"call sys_unblock\n"
 		"ret"
 	);
 }
@@ -114,3 +114,4 @@ ctx_new (
 	ctx->arg = (uint64_t)arg;
 	return &ctx->ctx;
 }
+

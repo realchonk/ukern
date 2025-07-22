@@ -1,0 +1,23 @@
+.SUBDIRS: sys
+
+AR ?= ar
+CC ?= cc
+CFLAGS += -g -O0 -std=c99 -Wall -Wextra
+
+.EXPORTS: AR CC CFLAGS
+
+all: sys test
+
+clean: sys/clean
+	rm -f test *.core
+
+run: test
+	./test
+
+test: test.c sys/libsys.a
+	${CC} -o $@ $< -I sys -L ${.OBJDIR}/sys -lsys
+
+.c.o:
+	${CC} -c -o $@ $< ${CFLAGS}
+
+# vim: set ft=bmk:
