@@ -131,6 +131,8 @@ find_free_id (void)
 {
 	int i;
 
+	assert_blocked ();
+
 	for (i = 1; i < MAX_TASKS; ++i) {
 		if (table[i] == NULL)
 			return i;
