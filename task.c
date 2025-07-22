@@ -15,6 +15,9 @@ static struct task *table[MAX_TASKS];
 /* scheduling list */
 static struct task *head = NULL, *current = NULL;
 
+/* tasks that have exited, but not yet waited */
+static struct task *zombies = NULL;
+
 static sigset_t default_sigset;
 
 void block (void)
@@ -160,6 +163,7 @@ task_new (
 		task = new (struct task);
 	}
 
+	task->state = TRUN;
 	task->tid = find_free_id ();
 	if (task->tid == -1) {
 		task_free (task);
@@ -236,6 +240,30 @@ link_task (struct task *task)
 	head = task;
 }
 
+static void
+task_orphan (struct task *task)
+{
+	task->ptid = 0;
+
+	if (task->state == TDEAD)
+		task_free (task);
+}
+
+void
+task_wakeup (int tid)
+{
+	struct task *task;
+	assert_blocked ();
+
+	task = table[tid];
+	assert (task != NULL);
+
+	if (task->state == TWAIT) {
+		task->state = TRUN;
+		link_task (task);
+	}
+}
+
 void
 task_exit (void)
 {
@@ -249,10 +277,22 @@ task_exit (void)
 	for (i = 0; i < MAX_TASKS; ++i) {
 		task = table[i];
 		if (task != NULL && task->ptid == current->tid)
-			task->ptid = 0;
+			task_orphan (task);
 	}
 
-	unlink_self ();
+	task = unlink_self ();
+	if (task->ptid == 0) {
+		task_free (task);
+	} else {
+		/* add self to the list of zombies */
+		task->state = TDEAD;
+		task->prev = NULL;
+		task->next = zombies;
+		if (task->next)
+			task->next->prev = task;
+		zombies = task;
+		task_wakeup (task->ptid);
+	}
 
 	if (current == NULL) {
 		current = head;
@@ -264,6 +304,56 @@ task_exit (void)
 	unblock ();
 
 	ctx_enter (current->ctx);
+}
+
+static void
+task_enter_sleep (void)
+{
+	struct task *task;
+
+	assert_blocked ();
+
+	task = unlink_self ();
+	task->state = TWAIT;
+
+	unblock ();
+	ctx_switch (&task->ctx, current->ctx);
+}
+
+int
+task_wait (void)
+{
+	struct task *task;
+	size_t i;
+	int tid;
+
+	while (1) {
+		block ();
+
+		/* try finding a dead child */
+		for (task = zombies; task != NULL; task = task->next) {
+			if (task->ptid == current->tid) {
+				tid = task->tid;
+
+				if (task->prev)
+					task->prev->next = task->next;
+				if (task->next)
+					task->next->prev = task->prev;
+				if (task == zombies)
+					zombies = task->next;
+				task->next = task->prev = NULL;
+
+				task_free (task);
+				return tid;
+			}
+		}
+
+		task_enter_sleep ();
+	}
+
+
+	unblock ();
+	return -1;
 }
 
 int

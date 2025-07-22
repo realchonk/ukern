@@ -13,22 +13,31 @@ void loop_task (void *arg)
 	task_exit ();
 }
 
+void other_task (void *arg)
+{
+	puts ("HELLO WORLD");
+	task_exit ();
+}
+
 void main_task (void *arg)
 {
 	(void)arg;
+	int tid;
 
+	task_spawn ("other", other_task, NULL);
 	task_spawn ("Task A", loop_task, "A");
 	task_spawn ("Task B", loop_task, "B");
 	task_spawn ("Task C", loop_task, "C");
-	task_spawn ("Task D", loop_task, "D");
-	task_spawn ("Task E", loop_task, "E");
-	task_spawn ("Task F", loop_task, "F");
+
+	puts ("waiting...");
+	tid = task_wait ();
+	printf ("%d exited.\n", tid);
 
 	task_exit ();
 }
 
 int main (void)
 {
-	task_start (main_task, NULL, 1000);
+	task_start (main_task, NULL, 100);
 	return 0;
 }

@@ -6,11 +6,19 @@
 
 struct cpu_context;
 
+enum task_state {
+	TRUN,				/* currently runnable */
+	TWAIT,				/* waiting for something */
+	TDEAD,				/* almost dead */
+};
+
 struct task {
 	struct task *next, *prev;
 	struct cpu_context *ctx;
+	enum task_state state;
 	int tid;			/* task id */
 	int ptid;			/* parent task id */
+	int data;
 
 	char *name;			/* task name (optional) */
 	void *stack;
@@ -36,6 +44,9 @@ int task_spawn (const char *name, void(*entry)(void *), void *arg);
 
 /* yield to another task */
 void task_yield (void);
+
+/* wait for a child task to exit */
+int task_wait (void);
 
 /* MISC */
 
