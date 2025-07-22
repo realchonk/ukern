@@ -1,42 +1,34 @@
+#include <unistd.h>
 #include <stdio.h>
 #include "ukern.h"
 
-void other_task (void *arg)
+void loop_task (void *arg)
 {
-	int *ptr = arg;
-
-	printf ("%d: *ptr = %d\n", task_id (), *ptr);
-
-	task_yield ();
-	task_yield ();
-	task_yield ();
-	task_yield ();
-	task_yield ();
-	task_yield ();
-
-	printf ("%d: exiting...\n", task_id ());
+	while (1) {
+		block ();
+		printf ("%s: %d %d\n", (const char *)arg, task_id (), task_parent_id ());
+		unblock ();
+		sleep (1);
+	}
 	task_exit ();
 }
 
 void main_task (void *arg)
 {
 	(void)arg;
-	int *x;
 
-	printf ("%d: Hello World!\n", task_id ());
+	task_spawn ("Task A", loop_task, "A");
+	task_spawn ("Task B", loop_task, "B");
+	task_spawn ("Task C", loop_task, "C");
+	task_spawn ("Task D", loop_task, "D");
+	task_spawn ("Task E", loop_task, "E");
+	task_spawn ("Task F", loop_task, "F");
 
-	x = new (int);
-	*x = 42;
-	task_spawn ("other", other_task, x);
-	task_yield ();
-	task_yield ();
-	
-	printf ("%d: exiting...\n", task_id ());
 	task_exit ();
 }
 
 int main (void)
 {
-	task_start (main_task, NULL);
+	task_start (main_task, NULL, 1000);
 	return 0;
 }

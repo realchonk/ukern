@@ -1,4 +1,6 @@
+#include <sys/time.h>
 #include <assert.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -47,6 +49,7 @@ find_free_id (void)
 static struct task *
 task_new (
 	const char *name,
+	int parent,
 	size_t stack_size,
 	void(*entry)(void *),
 	void *arg
@@ -68,6 +71,7 @@ task_new (
 	}
 	table[task->tid] = task;
 	
+	task->ptid = parent;
 	task->next = NULL;
 	task->prev = NULL;
 	task->name = name != NULL ? strdup (name) : NULL;
@@ -82,24 +86,18 @@ task_new (
 	return task;
 }
 
-void
-task_start (void(*entry)(void *), void *arg)
-{
-	assert (head == NULL);
-	assert (current == NULL);
-
-	memset (table, 0, sizeof (table));
-
-	head = current = task_new ("main", 4096, entry, arg);
-	ctx_enter (head->ctx);
-	while (1);
-}
-
 int
 task_id (void)
 {
 	assert (current != NULL);
 	return current->tid;
+}
+
+int
+task_parent_id (void)
+{
+	assert (current != NULL);
+	return current->ptid;
 }
 
 static struct task *
@@ -162,15 +160,29 @@ task_spawn (const char *name, void(*entry)(void *), void *arg)
 	struct task *task;
 
 	/* cannot run outside the runtime */
-	assert (head != NULL);
+	assert (current != NULL);
 
-	task = task_new (name, 4096, entry, arg);
+	task = task_new (name, current->tid, 4096, entry, arg);
 	if (task == NULL)
 		return -1;
 
 	link_task (task);
 
 	return task->tid;
+}
+
+static sigset_t default_sigset;
+
+void block (void)
+{
+	sigset_t blocked;
+	sigfillset (&blocked);
+	sigprocmask (SIG_SETMASK, &blocked, NULL);
+}
+
+void unblock (void)
+{
+	sigprocmask (SIG_SETMASK, &default_sigset, NULL);
 }
 
 void
@@ -180,8 +192,6 @@ task_yield (void)
 
 	assert (head != NULL && current != NULL);
 
-	printf ("%d: yielding...\n", task_id ());
-
 	old = current;
 	current = current->next;
 	if (current == NULL)
@@ -190,6 +200,45 @@ task_yield (void)
 	if (old == current)
 		return;
 
+	unblock ();
 	ctx_switch (&old->ctx, current->ctx);
+}
+
+static void preempt (int sig)
+{
+	assert (sig == SIGALRM);
+	task_yield ();
+}
+
+void
+task_start (
+	void(*entry)(void *),
+	void *arg,
+	int freq
+) {
+	struct itimerval timer;
+	sigset_t sigblock;
+
+	assert (head == NULL);
+	assert (current == NULL);
+
+	memset (table, 0, sizeof (table));
+
+	head = current = task_new ("main", 0, 4096, entry, arg);
+
+	/* block all signals and save the default sigmask */
+	sigfillset (&sigblock);
+	sigprocmask (SIG_SETMASK, &sigblock, &default_sigset);
+
+	/* set up preemption */
+	signal (SIGALRM, preempt);
+	timer.it_value.tv_sec = 0;
+	timer.it_value.tv_usec = 1000000 / freq;
+	timer.it_interval = timer.it_value;
+	setitimer (ITIMER_REAL, &timer, NULL);
+
+	unblock ();
+	ctx_enter (head->ctx);
+	while (1);
 }
 

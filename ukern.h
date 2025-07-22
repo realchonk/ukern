@@ -10,6 +10,7 @@ struct task {
 	struct task *next, *prev;
 	struct cpu_context *ctx;
 	int tid;			/* task id */
+	int ptid;			/* parent task id */
 
 	char *name;			/* task name (optional) */
 	void *stack;
@@ -19,10 +20,13 @@ struct task {
 /* TASK */
 
 /* start the multitasking system */
-void task_start (void(*entry)(void *), void *);
+void task_start (void(*entry)(void *), void *, int freq);
 
 /* get the current task id */
 int task_id (void);
+
+/* get the parent task id */
+int task_parent_id (void);
 
 /* exit the current task */
 void task_exit (void);
@@ -34,6 +38,12 @@ int task_spawn (const char *name, void(*entry)(void *), void *arg);
 void task_yield (void);
 
 /* MISC */
+
+/* block signals */
+void block (void);
+/* unblock signals */
+void unblock (void);
+
 void *alloc_stack (size_t size);
 void free_stack (void *ptr, size_t size);
 
