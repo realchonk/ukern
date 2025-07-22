@@ -10,19 +10,19 @@ void loop_task (void *arg)
 		unblock ();
 		sleep (1);
 	}
-	task_exit ();
+	task_exit (0);
 }
 
 void other_task (void *arg)
 {
 	puts ("HELLO WORLD");
-	task_exit ();
+	task_exit (42);
 }
 
 void main_task (void *arg)
 {
 	(void)arg;
-	int tid;
+	int tid, wst;
 
 	task_spawn ("other", other_task, NULL);
 	task_spawn ("Task A", loop_task, "A");
@@ -30,10 +30,10 @@ void main_task (void *arg)
 	task_spawn ("Task C", loop_task, "C");
 
 	puts ("waiting...");
-	tid = task_wait ();
-	printf ("%d exited.\n", tid);
+	tid = task_wait (&wst);
+	printf ("%d exited with %d.\n", tid, wst);
 
-	task_exit ();
+	task_exit (0);
 }
 
 int main (void)

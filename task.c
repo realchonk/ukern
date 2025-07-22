@@ -265,7 +265,7 @@ task_wakeup (int tid)
 }
 
 void
-task_exit (void)
+task_exit (int ec)
 {
 	assert (current != NULL);
 	struct task *task;
@@ -281,6 +281,7 @@ task_exit (void)
 	}
 
 	task = unlink_self ();
+	task->data = ec;
 	if (task->ptid == 0) {
 		task_free (task);
 	} else {
@@ -321,10 +322,9 @@ task_enter_sleep (void)
 }
 
 int
-task_wait (void)
+task_wait (int *wid)
 {
 	struct task *task;
-	size_t i;
 	int tid;
 
 	while (1) {
@@ -342,6 +342,9 @@ task_wait (void)
 				if (task == zombies)
 					zombies = task->next;
 				task->next = task->prev = NULL;
+
+				if (wid != NULL)
+					*wid = task->data;
 
 				task_free (task);
 				return tid;

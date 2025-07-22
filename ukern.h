@@ -37,7 +37,7 @@ int task_id (void);
 int task_parent_id (void);
 
 /* exit the current task */
-void task_exit (void);
+void task_exit (int);
 
 /* spawn a new task */
 int task_spawn (const char *name, void(*entry)(void *), void *arg);
@@ -46,7 +46,7 @@ int task_spawn (const char *name, void(*entry)(void *), void *arg);
 void task_yield (void);
 
 /* wait for a child task to exit */
-int task_wait (void);
+int task_wait (int *wid);
 
 /* MISC */
 
