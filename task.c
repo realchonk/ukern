@@ -240,8 +240,18 @@ void
 task_exit (void)
 {
 	assert (current != NULL);
+	struct task *task;
+	size_t i;
 
 	block ();
+
+	/* orphan all children */
+	for (i = 0; i < MAX_TASKS; ++i) {
+		task = table[i];
+		if (task != NULL && task->ptid == current->tid)
+			task->ptid = 0;
+	}
+
 	unlink_self ();
 
 	if (current == NULL) {
