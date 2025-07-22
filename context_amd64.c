@@ -61,6 +61,7 @@ ctx_enter (struct cpu_context *ctx)
 		"pop %r13\n"
 		"pop %r14\n"
 		"pop %r15\n"
+		"call unblock\n"
 		"ret"
 	);
 }
@@ -91,6 +92,7 @@ ctx_switch (struct cpu_context **old, struct cpu_context *ctx)
 		"pop %r13\n"
 		"pop %r14\n"
 		"pop %r15\n"
+		"call unblock\n"
 		"ret"
 	);
 }

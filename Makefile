@@ -1,4 +1,4 @@
-CFLAGS = -g -O0 -std=c99 -Wall -Wextra
+CFLAGS = -g3 -O1 -std=c99 -Wall -Wextra -fno-omit-frame-pointer
 
 SRC = main.c		\
       context_amd64.c	\

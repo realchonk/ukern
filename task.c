@@ -123,6 +123,8 @@ task_free (struct task *task)
 {
 	assert_blocked ();
 
+	task->state = TDEAD;
+
 	if (task->tid != -1)
 		table[task->tid] = NULL;
 	task->next = free_list;
@@ -184,6 +186,13 @@ task_new (
 	task->stack_size = stack_size;
 	task->ctx = ctx_new (task->stack, stack_size, entry, arg);
 	return task;
+}
+
+const char *
+task_name (void)
+{
+	assert (current != NULL);
+	return current->name;
 }
 
 int
@@ -249,11 +258,12 @@ task_orphan (struct task *task)
 		task_free (task);
 }
 
-void
+static void
 task_wakeup (int tid)
 {
 	struct task *task;
 	assert_blocked ();
+	assert (tid <= MAX_TASKS);
 
 	task = table[tid];
 	assert (task != NULL);
@@ -268,11 +278,6 @@ static void
 task_die (struct task *task, int ec)
 {
 	assert_blocked ();
-
-	if (task->ptid == 0) {
-		task_free (task);
-		return;
-	}
 
 	switch (task->state) {
 	case TRUN:
@@ -289,6 +294,11 @@ task_die (struct task *task, int ec)
 		break;
 	case TDEAD:
 		break;
+	}
+
+	if (task->ptid == 0) {
+		task_free (task);
+		return;
 	}
 
 	task->state = TDEAD;
@@ -328,7 +338,6 @@ task_exit (int ec)
 			exit (0);
 		}
 	}
-	unblock ();
 
 	ctx_enter (current->ctx);
 }
@@ -340,6 +349,7 @@ task_kill (int tid)
 
 	block ();
 
+	assert (tid <= MAX_TASKS);
 	task = table[tid];
 	if (task == NULL)
 		return -1;
@@ -360,7 +370,6 @@ task_enter_sleep (void)
 	task = unlink_self ();
 	task->state = TWAIT;
 
-	unblock ();
 	ctx_switch (&task->ctx, current->ctx);
 }
 
@@ -407,10 +416,10 @@ task_spawn (const char *name, void(*entry)(void *), void *arg)
 {
 	struct task *task;
 
+	block ();
+
 	/* cannot run outside the runtime */
 	assert (current != NULL);
-
-	block ();
 
 	task = task_new (name, current->tid, 4096, entry, arg);
 	if (task == NULL)
@@ -419,7 +428,6 @@ task_spawn (const char *name, void(*entry)(void *), void *arg)
 	link_task (task);
 
 	unblock ();
-
 	return task->tid;
 }
 
@@ -428,11 +436,9 @@ task_yield (void)
 {
 	struct task *old;
 
-	assert (head != NULL && current != NULL);
-
 	block ();
-	assert_blocked ();
 
+	assert (head != NULL && current != NULL);
 	old = current;
 	current = current->next;
 	if (current == NULL)
@@ -441,8 +447,33 @@ task_yield (void)
 	if (old == current)
 		return;
 
-	unblock ();
+	assert (current->state == TRUN);
+
 	ctx_switch (&old->ctx, current->ctx);
+}
+
+static void
+task_sleep_until (struct timespec *until)
+{
+	struct timespec now;
+	while (1) {
+		clock_gettime (CLOCK_REALTIME, &now);
+
+		if (timespeccmp (&now, until, >=))
+			break;
+
+		task_yield ();
+	}
+}
+
+void
+task_sleep (int sec)
+{
+	struct timespec ts;
+
+	clock_gettime (CLOCK_REALTIME, &ts);
+	ts.tv_sec += sec;
+	task_sleep_until (&ts);
 }
 
 static void preempt (int sig)
@@ -480,7 +511,6 @@ task_start (
 	setitimer (ITIMER_REAL, &timer, NULL);
 
 	/* enter "userspace" */
-	unblock ();
 	ctx_enter (head->ctx);
 	while (1);
 }

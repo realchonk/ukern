@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #define new(T) ((T *)calloc (1, sizeof (T)))
-#define MAX_TASKS 16
+#define MAX_TASKS 128
 
 struct cpu_context;
 
@@ -30,6 +30,9 @@ struct task {
 /* start the multitasking system */
 void task_start (void(*entry)(void *), void *, int freq);
 
+/* get the current tasks' name */
+const char *task_name (void);
+
 /* get the current task id */
 int task_id (void);
 
@@ -50,6 +53,8 @@ int task_wait (int *wid);
 
 /* kill a task */
 int task_kill (int tid);
+
+void task_sleep (int sec);
 
 /* MISC */
 
