@@ -1,9 +1,11 @@
 #pragma once
+#include <sys/socket.h>
 #include <sys/queue.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <time.h>
 #include <poll.h>
 
@@ -99,10 +101,13 @@ void task_do_wait (struct task *, struct wchan *);
 void task_sleep (unsigned int);
 
 /* IO */
+FILE *task_fdopen (int fd);
 int task_read (int fd, void *buf, size_t nbytes);
 int task_write (int fd, const void *buf, size_t nbytes);
 int task_printf (const char *, ...);
 int task_vdprintf (int, const char *, va_list);
+int task_connect (int fd, struct sockaddr *name, socklen_t namelen);
+int task_accept (int fd, struct sockaddr *name, socklen_t *namelen);
 
 /* MISC */
 void sys_panic (const char *filename, const char *msg);

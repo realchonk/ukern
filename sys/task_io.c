@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <fcntl.h>
-#include <stdio.h>
+#include <errno.h>
 #include "task.h"
 
 static TAILQ_HEAD(, task) pending_io = TAILQ_HEAD_INITIALIZER(pending_io);
@@ -185,6 +185,12 @@ wrap_fd (int fd)
 # error Your platform does not support creating generic FILE objects
 #endif
 
+FILE *
+task_fdopen (int fd)
+{
+	return wrap_fd (fd);
+}
+
 int
 task_vdprintf (int fd, const char *fmt, va_list ap)
 {
@@ -207,5 +213,61 @@ task_printf (const char *fmt, ...)
 	ret = task_vdprintf (STDOUT_FILENO, fmt, ap);
 	va_end (ap);
 
+	return ret;
+}
+
+int
+task_connect (int fd, struct sockaddr *name, socklen_t namelen)
+{
+	int revents, ret, error, flags;
+	socklen_t len = sizeof (error);
+
+	flags = fcntl (fd, F_GETFL);
+	if (fcntl (fd, F_SETFL, flags | O_NONBLOCK) == -1)
+		return -1;
+
+	while (1) {
+		ret = connect (fd, name, namelen);
+		if (ret == 0 || errno != EINTR)
+			break;
+
+		revents = task_wait_io (fd, POLLOUT);
+		task_printf ("revents = %d\n", revents);
+		if (getsockopt (fd, SOL_SOCKET, SO_ERROR, &error, &len) == -1)
+			return -1;
+		if (error != 0) {
+			errno = error;
+			return -1;
+		}
+		return 0;
+	}
+
+	error = errno;
+	fcntl (fd, F_SETFL, flags);
+	errno = error;
+	return ret;
+}
+
+int
+task_accept (int fd, struct sockaddr *addr, socklen_t *addrlen)
+{
+	int ret, flags, error;
+
+	flags = fcntl (fd, F_GETFL);
+	if (fcntl (fd, F_SETFL, flags | O_NONBLOCK) == -1)
+		return -1;
+
+	ret = task_wait_io (fd, POLLIN);
+	if (!(ret & POLLIN)) {
+		ret = -1;
+		goto done;
+	}
+
+	ret = accept (fd, addr, addrlen);
+
+done:
+	error = errno;
+	fcntl (fd, F_SETFL, flags);
+	errno = error;
 	return ret;
 }
