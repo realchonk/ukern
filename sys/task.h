@@ -105,6 +105,7 @@ FILE *task_fdopen (int fd);
 int task_read (int fd, void *buf, size_t nbytes);
 int task_write (int fd, const void *buf, size_t nbytes);
 int task_printf (const char *, ...);
+int task_dprintf (int fd, const char *, ...);
 int task_vdprintf (int, const char *, va_list);
 int task_connect (int fd, struct sockaddr *name, socklen_t namelen);
 int task_accept (int fd, struct sockaddr *name, socklen_t *namelen);

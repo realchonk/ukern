@@ -204,6 +204,19 @@ task_vdprintf (int fd, const char *fmt, va_list ap)
 }
 
 int
+task_dprintf (int fd, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start (ap, fmt);
+	ret = task_vdprintf (fd, fmt, ap);
+	va_end (ap);
+
+	return ret;
+}
+
+int
 task_printf (const char *fmt, ...)
 {
 	va_list ap;
