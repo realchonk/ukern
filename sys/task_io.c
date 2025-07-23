@@ -9,9 +9,11 @@ static size_t num_fds = 0;
 void
 sys_do_io (void)
 {
+	static struct pollfd *fds = NULL;
+	static size_t old_num_fds = 0;
+
 	struct task *task, *tmp;
 	struct wchan *wchan;
-	struct pollfd *fds;
 	size_t i;
 	int r;
 
@@ -19,7 +21,11 @@ sys_do_io (void)
 		return;
 
 	sys_block ();
-	fds = calloc (num_fds, sizeof (struct pollfd));
+
+	if (num_fds > old_num_fds) {
+		fds = reallocarray (fds, num_fds, sizeof (struct pollfd));
+		old_num_fds = num_fds;
+	}
 
 	i = 0;
 	TAILQ_FOREACH (task, &pending_io, queue) {
