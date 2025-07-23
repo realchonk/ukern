@@ -1,6 +1,7 @@
 #pragma once
 #include <sys/socket.h>
 #include <sys/queue.h>
+#include <sys/tree.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -26,7 +27,8 @@ enum task_state {
 };
 
 struct task {
-	TAILQ_ENTRY(task) queue;
+	RB_ENTRY(task) entry;		/* entry in the task tree */
+	TAILQ_ENTRY(task) queue;	/* entry in one of many queues */
 	enum task_state state;
 
 	/* list of children */

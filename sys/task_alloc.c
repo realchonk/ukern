@@ -2,59 +2,62 @@
 #include <string.h>
 #include "task.h"
 
-#define MAX_TASKS 128
-
+static RB_HEAD(tasktree, task) tthead = RB_INITIALIZER (&task_tree);
 static TAILQ_HEAD(tq_fl, task) free_list = TAILQ_HEAD_INITIALIZER (free_list);
-static struct task *table[128];
-static int rotor = -1;
-
 static void task_do_free (struct task *);
+static int cmp_task (struct task *t1, struct task *t2)
+{
+	if (t1->tid > t2->tid) {
+		return 1;
+	} else if (t1->tid < t2->tid) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+RB_PROTOTYPE_STATIC(tasktree, task, entry, cmp_task);
+RB_GENERATE_STATIC(tasktree, task, entry, cmp_task);
+
 
 static int
-find_task_id (void)
+next_task_id (void)
 {
 	struct task *task;
-	int end;
-
-	for (end = rotor++; rotor != end; rotor = (rotor + 1) % MAX_TASKS) {
-		task = table[rotor];
-		if (task == NULL)
-			return rotor;
-	}
-	return -1;
+	assert_blocked ();
+	task = RB_MAX (tasktree, &tthead);
+	return task != NULL ? task->tid + 1 : 0;
 }
 
 struct task *
 task_get (int tid)
 {
-	return tid >= 0 && tid < MAX_TASKS ? table[tid] : NULL;
+	struct task tmp;
+	tmp.tid = tid;
+	return RB_FIND (tasktree, &tthead, &tmp);
 }
 
 struct task *
 task_alloc (void)
 {
 	struct task *task;
-	int tid;
 	
 	assert_blocked ();
-
-	tid = find_task_id ();
-	if (tid < 0)
-		return NULL;
 
 	task = TAILQ_FIRST (&free_list);
 	if (task != NULL) {
 		TAILQ_REMOVE (&free_list, task, queue);
-
 		task_do_free (task);
 	} else {
 		task = new (struct task);
+		task->tid = -1;
 	}
 
-	table[tid] = task;
+	sys_assert (task->tid == -1);
 
 	memset (task, 0, sizeof (*task));
-	task->tid = tid;
+	task->tid = next_task_id ();
+	RB_INSERT (tasktree, &tthead, task);
 	return task;
 }
 
@@ -64,9 +67,8 @@ task_free (struct task *self)
 	assert_blocked ();
 
 	self->state = TFREE;
-	sys_assert (self == table[self->tid]);
-	table[self->tid] = NULL;
-
+	RB_REMOVE (tasktree, &tthead, self);
+	self->tid = -1;
 	TAILQ_INSERT_TAIL (&free_list, self, queue);
 }
 
