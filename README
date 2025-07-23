@@ -4,3 +4,12 @@ but without using the operating system's threads/processes.
 Meaning, all tasks run concurrently on the thread/process that ran `task_start()`.
 
 To build this project, you first have to install *bmk* from https://github.com/realchonk/bmk
+
+# Supported CPU Architectures
+Currently only amd64 is supported.
+For new architectures, the `ctx_{enter,switch,new}` functions in `sys/ctx_${ARCH}.c` have to be rewritten.
+
+# Supported Operating Systems
+In theory this project should be able to run on any Unix-like operating system,
+but only OpenBSD and Linux have been tested so far.
+
