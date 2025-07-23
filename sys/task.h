@@ -110,7 +110,16 @@ int task_vdprintf (int, const char *, va_list);
 int task_connect (int fd, struct sockaddr *name, socklen_t namelen);
 int task_accept (int fd, struct sockaddr *name, socklen_t *namelen);
 
+/* ERRORS */
+void task_err (int ec, const char *fmt, ...);
+void task_errx (int ec, const char *fmt, ...);
+void task_warn (const char *fmt, ...);
+void task_warnx (const char *fmt, ...);
+
 /* MISC */
+const char *task_name (void);
+int task_id (void);
+int task_parent_id (void);
 void sys_panic (const char *filename, const char *msg);
 
 struct task *task_current (void);
