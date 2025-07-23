@@ -1,0 +1,6 @@
+This project implements a "kernel" in user-space.
+The kernel currently only implements preemptive multi-tasking,
+but without using the operating system's threads/processes.
+Meaning, all tasks run concurrently on the thread/process that ran `task_start()`.
+
+To build this project, you first have to install *bmk* from https://github.com/realchonk/bmk
