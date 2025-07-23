@@ -7,10 +7,13 @@ static TAILQ_HEAD(sq_tq, task) sched_queue = TAILQ_HEAD_INITIALIZER (sched_queue
 void
 sched_task (void *arg)
 {
-	/* TODO: do something smart */
+	extern void sys_wakeup_sleeping (void);
 	(void)arg;
-	while (1)
+
+	while (1) {
 		task_yield ();
+		sys_wakeup_sleeping ();
+	}
 }
 
 struct task *
@@ -79,16 +82,14 @@ task_yield (void)
 	sys_block ();
 
 	/* move self to the back of the queue */
-	self = task_current ();
-	if (self->tid != 0) {
-		task_unqueue (self);
-		task_enqueue (self);
-	}
+	self = task_unlink_self ();
+	task_enqueue (self);
 
 	/* skip the context switch, if we are the only runnable task */
 	next = task_current ();
 	if (self == next)
 		return;
+
 
 	task_switch (self);
 }

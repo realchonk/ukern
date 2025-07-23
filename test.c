@@ -4,10 +4,12 @@
 void loop_task (void *arg)
 {
 	const char *str = arg;
+	int delay = rand () % 5 + 1;
 
 	while (1) {
-		puts (str);
+		printf ("%s, delay: %d\n", str, delay);
 		task_yield ();
+		task_sleep (delay);
 	}
 }
 

@@ -1,13 +1,14 @@
 CPU != uname -m
 OS != uname | tr '[:upper:]' '[:lower:]'
 
-SRCS =	ctx_${CPU}.c		\
-	stack_${OS}.c		\
-	signal.c		\
-	misc.c			\
-	task_alloc.c		\
-	task_start.c		\
-	task_sched.c		\
+SRCS =	ctx_${CPU}.c	\
+	stack_${OS}.c	\
+	signal.c	\
+	misc.c		\
+	task_alloc.c	\
+	task_start.c	\
+	task_sched.c	\
+	task_sleep.c	\
 	task_wait.c
 
 OBJS = ${SRCS:.c=.o}

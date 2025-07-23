@@ -54,12 +54,9 @@ task_exit (int ec)
 void
 task_do_wait (struct task *self, struct wchan *wchan)
 {
-	if (self->state == TRUN)
-		task_unqueue (self);
-
+	assert_blocked ();
 	self->state = TWAIT;
 	self->data.wchan = wchan;
-	
 	task_switch (self);
 }
 
@@ -94,6 +91,7 @@ task_wait (int *wid)
 	}
 
 	/* otherwise wait until one dies */
+	task_unqueue (self);
 	wchan = new (struct wchan);
 	wchan->type = WCHAN_WAIT;
 	task_do_wait (self, wchan);
@@ -108,5 +106,6 @@ task_wait (int *wid)
 
 	LIST_REMOVE (child, sibling);
 	task_free (child);
+	free (wchan);
 	return tid;
 }
