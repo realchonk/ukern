@@ -50,7 +50,7 @@ struct task {
 enum wchan_type {
 	WCHAN_WAIT,			/* task_wait() */
 	WCHAN_SLEEP,			/* task_sleep() */
-	WCHAN_WAITIO,			/* task_read() */
+	WCHAN_WAITIO,			/* task_read(), task_write() */
 };
 
 /* wait channel */
@@ -98,7 +98,9 @@ void task_do_wait (struct task *, struct wchan *);
 
 void task_sleep (unsigned int);
 
+/* IO */
 int task_read (int fd, void *buf, size_t nbytes);
+int task_write (int fd, const void *buf, size_t nbytes);
 int task_printf (const char *, ...);
 int task_vdprintf (int, const char *, va_list);
 
