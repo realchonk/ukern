@@ -121,6 +121,7 @@ const char *task_name (void);
 int task_id (void);
 int task_parent_id (void);
 void sys_panic (const char *filename, const char *msg);
+const char *xitoa (char *buf, int x, int base);
 
 struct task *task_current (void);
 void task_start (void(*entry)(void *), void *arg, int freq);

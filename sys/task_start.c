@@ -75,6 +75,7 @@ task_start (
 	void *arg,
 	int freq
 ) {
+	extern void catch_crash (int);
 	struct itimerval timer;
 	sigset_t sigblock;
 	struct task *task;
@@ -103,6 +104,14 @@ task_start (
 	timer.it_value.tv_usec = 1000000 / freq;
 	timer.it_interval = timer.it_value;
 	setitimer (ITIMER_REAL, &timer, NULL);
+
+	signal (SIGILL, catch_crash);
+	signal (SIGTRAP, catch_crash);
+	signal (SIGFPE, catch_crash);
+	signal (SIGSEGV, catch_crash);
+	signal (SIGBUS, catch_crash);
+	signal (SIGSYS, catch_crash);
+	signal (SIGPIPE, catch_crash);
 
 	/* enter "userspace" */
 	task_enter ();

@@ -60,13 +60,20 @@ void server_task (void *arg)
 void loop_task (void *arg)
 {
 	const char *str = arg;
-	int delay = (rand () % 5 + 1) * 3;
+	int delay = rand () % 10 + 1;
 
 	while (1) {
 		task_printf ("%s, delay: %d\n", str, delay);
 		task_yield ();
 		task_sleep (delay);
 	}
+}
+
+void crashing_task (void *arg)
+{
+	int *ptr = arg;
+	*ptr = 42;
+	task_exit (0);
 }
 
 void io_task (void *arg)
@@ -100,22 +107,32 @@ void other_task (void *arg)
 		task_spawn (name, loop_task, name);
 	}
 
-	task_spawn ("io", io_task, NULL);
-	task_spawn ("server", server_task, NULL);
-
 	task_exit (42);
 }
 
 void main_task (void *arg)
 {
-	int tid, wid;
+	int i, tid, wid;
+
 	puts ("Hello World");
 	tid = task_spawn ("other", other_task, NULL);
 	task_printf ("tid = %d\n", tid);
 
-	task_printf ("waiting for task...\n");
-	tid = task_wait (&wid);
-	task_printf ("tid = %d, wid = %d\n", tid, wid);
+	task_spawn ("io", io_task, NULL);
+	task_spawn ("server", server_task, NULL);
+	for (i = 0; i < 3; ++i) {
+		task_sleep (1);
+		task_spawn ("bad", crashing_task, NULL);
+	}
+
+	while (1) {
+		task_printf ("main: waiting for task to finish...\n");
+		tid = task_wait (&wid);
+		if (tid == -1)
+			break;
+		task_printf ("main: task %d exited with %d\n", tid, wid);
+	}
+	task_printf ("main: no more tasks to wait for..., exiting\n");
 
 	task_exit (0);
 }

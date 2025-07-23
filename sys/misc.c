@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "task.h"
 
-static const char *
+const char *
 xitoa (char *buf, int x, int base)
 {
 	static const char alph[] = "0123456789ABCDEF";
