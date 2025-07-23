@@ -1,9 +1,11 @@
 #pragma once
 #include <sys/queue.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <time.h>
+#include <poll.h>
 
 #define new(T) ((T *)calloc (1, sizeof (T)))
 #define panic(msg) (sys_panic (__func__, (msg)))
@@ -48,6 +50,7 @@ struct task {
 enum wchan_type {
 	WCHAN_WAIT,			/* task_wait() */
 	WCHAN_SLEEP,			/* task_sleep() */
+	WCHAN_WAITIO,			/* task_read() */
 };
 
 /* wait channel */
@@ -57,6 +60,7 @@ struct wchan {
 	union {
 		struct task *task;	/* WAIT */
 		struct timespec until;	/* SLEEP */
+		struct pollfd io;	/* WAITIO */
 	} data;
 };
 
@@ -93,6 +97,10 @@ int task_wait (int *);
 void task_do_wait (struct task *, struct wchan *);
 
 void task_sleep (unsigned int);
+
+int task_read (int fd, void *buf, size_t nbytes);
+int task_printf (const char *, ...);
+int task_vdprintf (int, const char *, va_list);
 
 /* MISC */
 void sys_panic (const char *filename, const char *msg);

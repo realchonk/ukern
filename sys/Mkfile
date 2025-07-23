@@ -5,6 +5,7 @@ SRCS =	ctx_${CPU}.c	\
 	signal.c	\
 	misc.c		\
 	task_alloc.c	\
+	task_io.c	\
 	task_start.c	\
 	task_sched.c	\
 	task_sleep.c	\

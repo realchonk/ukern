@@ -8,11 +8,13 @@ void
 sched_task (void *arg)
 {
 	extern void sys_wakeup_sleeping (void);
+	extern void sys_do_io (void);
 	(void)arg;
 
 	while (1) {
 		task_yield ();
 		sys_wakeup_sleeping ();
+		sys_do_io ();
 	}
 }
 
