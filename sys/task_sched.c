@@ -4,33 +4,19 @@
 
 static TAILQ_HEAD(sq_tq, task) sched_queue = TAILQ_HEAD_INITIALIZER (sched_queue);
 
-/*
- * task to run, when there are no other tasks to run
- * This task has the following restrictions:
- * - cannot task_exit()
- * */
 void
 sched_task (void *arg)
 {
 	/* TODO: do something smart */
 	(void)arg;
-	exit (0);
-	//while (1)
-	//	task_yield ();
+	while (1)
+		task_yield ();
 }
 
 struct task *
 task_current (void)
 {
-	struct task *task;
-
-	task = TAILQ_FIRST (&sched_queue);
-	if (task != NULL)
-		return task;
-
-	task = task_get (0);
-	sys_assert (task != NULL);
-	return task;
+	return TAILQ_FIRST (&sched_queue);
 }
 
 void

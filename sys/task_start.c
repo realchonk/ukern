@@ -89,7 +89,7 @@ task_start (
 
 	/* create the "idle" task */
 	task = task_new ("sched", -1, 4096, sched_task, NULL);
-	task->state = TRUN;
+	task_enqueue (task);
 	sys_assert (task->tid == 0);
 
 	/* intialize process table and spawn first task */
