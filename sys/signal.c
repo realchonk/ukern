@@ -49,6 +49,10 @@ catch_crash (int sig)
 	strlcat (msg, strsignal (sig), sizeof (msg));
 	strlcat (msg, "\n", sizeof (msg));
 	write (STDERR_FILENO, msg, strlen (msg));
+
+	/* crashes in the sched must be serious! */
+	if (task_id () == 0)
+		abort ();
 	task_exit (169);
 }
 
