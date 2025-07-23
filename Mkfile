@@ -3,8 +3,16 @@
 AR ?= ar
 CC ?= cc
 CFLAGS += -g -O0 -std=c99 -Wall -Wextra
+LDFLAGS ?=
+OS != uname
 
-.EXPORTS: AR CC CFLAGS
+# Linux currently requires libbsd-overlay for TAILQ_FOREACH_SAFE()
+.if "${OS}" == "Linux"
+CFLAGS += -D_GNU_SOURCE `pkg-config --cflags libbsd-overlay`
+CFLAGS += `pkg-config --libs libbsd-overlay`
+.endif
+
+.EXPORTS: AR CC CFLAGS LDFLAGS
 
 all: sys test
 
@@ -15,7 +23,7 @@ run: test
 	./test
 
 test: test.c sys/libsys.a
-	${CC} -o $@ $< -I sys -L ${.OBJDIR}/sys -lsys
+	${CC} -o $@ $< -I sys -L ${.OBJDIR}/sys -lsys ${LDFLAGS}
 
 .c.o:
 	${CC} -c -o $@ $< ${CFLAGS}
