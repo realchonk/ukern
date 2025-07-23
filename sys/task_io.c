@@ -155,9 +155,13 @@ impl_write (void *cookie, const char *buf, size_t n)
 }
 
 static int
-impl_seek (void *cookie, off_t off, int dir)
+impl_seek (void *cookie, off_t *off, int dir)
 {
-	return lseek ((int)(size_t)cookie, off, dir);
+       off_t pos = lseek ((int)(size_t)cookie, *off, dir);
+       if (pos < 0)
+               return -1;
+       *off = pos;
+       return 0;
 }
 
 static FILE *
