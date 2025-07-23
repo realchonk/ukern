@@ -13,8 +13,11 @@ xitoa (char *buf, int x, int base)
 
 	//assert (base >= 2 && base <= 16);
 
-	if (x == 0)
-		return "0";
+	if (x == 0) {
+		buf[0] = '0';
+		buf[1] = '\0';
+		return buf;
+	}
 
 	if (x < 0) {
 		neg = true;
