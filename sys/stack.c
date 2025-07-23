@@ -3,11 +3,15 @@
 
 void *stack_alloc (size_t size)
 {
+	int flags = MAP_ANON | MAP_PRIVATE;
+#ifdef __OpenBSD__
+	flags |= MAP_STACK;
+#endif
 	void *ptr = mmap (
 		NULL,
 		size,
 		PROT_READ | PROT_WRITE,
-		MAP_ANON | MAP_PRIVATE | MAP_STACK,
+		flags,
 		-1,
 		0
 	);

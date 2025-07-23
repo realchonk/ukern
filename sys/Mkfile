@@ -1,8 +1,7 @@
 CPU != uname -m
-OS != uname | tr '[:upper:]' '[:lower:]'
 
 SRCS =	ctx_${CPU}.c	\
-	stack_${OS}.c	\
+	stack.c		\
 	signal.c	\
 	misc.c		\
 	task_alloc.c	\
