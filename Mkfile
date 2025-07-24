@@ -23,7 +23,7 @@ run: test
 	./test
 
 test: test.c sys/libsys.a
-	${CC} -o $@ $< -I sys -L ${.OBJDIR}/sys -lsys ${LDFLAGS}
+	${CC} -o $@ $< -I sys -L ${.OBJDIR}/sys -lsys ${CFLAGS} ${LDFLAGS}
 
 .c.o:
 	${CC} -c -o $@ $< ${CFLAGS}
