@@ -32,6 +32,7 @@ void server_task (void *arg)
 {
 	struct sockaddr_in addr;
 	int sockfd, clientfd, optval = 1;
+	(void)arg;
 
 	sockfd = socket (AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
@@ -39,7 +40,6 @@ void server_task (void *arg)
 
 	setsockopt (sockfd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof (optval));
 
-	addr.sin_len = sizeof (addr);
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons (8000);
 	addr.sin_addr.s_addr = INADDR_ANY;
@@ -100,6 +100,8 @@ void other_task (void *arg)
 	char *name;
 	int i;
 
+	(void)arg;
+
 	puts ("Other task");
 
 	for (i = 0; i < 3; ++i) {
@@ -113,6 +115,8 @@ void other_task (void *arg)
 void main_task (void *arg)
 {
 	int i, tid, wid;
+
+	(void)arg;
 
 	puts ("Hello World");
 	tid = task_spawn ("other", other_task, NULL);

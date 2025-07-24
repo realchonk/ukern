@@ -2,6 +2,11 @@
 #include <string.h>
 #include "task.h"
 
+/* See: https://gitlab.freedesktop.org/libbsd/libbsd/-/issues?show=eyJpaWQiOiIzNCIsImZ1bGxfcGF0aCI6ImxpYmJzZC9saWJic2QiLCJpZCI6MTM1ODM0fQ%3D%3D */
+#ifndef __unused
+# define __unused __attribute__((unused))
+#endif
+
 static RB_HEAD(tasktree, task) tthead = RB_INITIALIZER (&task_tree);
 static TAILQ_HEAD(tq_fl, task) free_list = TAILQ_HEAD_INITIALIZER (free_list);
 static void task_do_free (struct task *);
