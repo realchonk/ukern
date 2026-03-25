@@ -1,5 +1,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
+#include <string.h>
 #include <stdio.h>
 #include "sys/task.h"
 
@@ -112,6 +113,36 @@ void other_task (void *arg)
 	task_exit (42);
 }
 
+void ping_task (void *arg)
+{
+	struct sockaddr_in addr;
+	int sock;
+
+	memset (&addr, 0, sizeof (addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = 80;
+	addr.sin_addr.s_addr = 0x01010101; // 1.1.1.1
+	
+	while (1) {
+		sock = socket (AF_INET, SOCK_STREAM, 0);
+		if (sock < 0)
+			task_err (1, "socket()");
+
+		task_printf ("connecting to 1.1.1.1\n");
+
+		if (task_connect (sock, (struct sockaddr *)&addr, sizeof (addr)) != 0) {
+			task_warn ("connect()");
+			goto next;
+		}
+
+		task_printf ("connected to 1.1.1.1\n");
+
+	next:
+		close (sock);
+		task_sleep (1);
+	}
+}
+
 void main_task (void *arg)
 {
 	int i, tid, wid;
@@ -122,6 +153,7 @@ void main_task (void *arg)
 	tid = task_spawn ("other", other_task, NULL);
 	task_printf ("tid = %d\n", tid);
 
+	task_spawn ("ping", ping_task, NULL);
 	task_spawn ("io", io_task, NULL);
 	task_spawn ("server", server_task, NULL);
 	for (i = 0; i < 3; ++i) {

@@ -241,7 +241,7 @@ task_connect (int fd, struct sockaddr *name, socklen_t namelen)
 
 	while (1) {
 		ret = connect (fd, name, namelen);
-		if (ret == 0 || errno != EINTR)
+		if (ret == 0 || errno != EINPROGRESS)
 			break;
 
 		revents = task_wait_io (fd, POLLOUT);
